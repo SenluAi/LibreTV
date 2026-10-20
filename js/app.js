@@ -805,9 +805,10 @@ async function showDetails(id, vod_name, sourceCode) {
             apiParams = '&source=' + sourceCode;
         }
         
-        const response = await fetch('/api/detail?id=' + encodeURIComponent(id) + apiParams);
-        
-        const data = await response.json();
+        // 构建模拟的API请求URL，直接调用前端处理函数（不依赖后端服务器）
+        const mockUrl = new URL('/api/detail?id=' + encodeURIComponent(id) + apiParams, window.location.origin);
+        const responseText = await handleApiRequest(mockUrl);
+        const data = JSON.parse(responseText);
         
         // ...existing code for showing details...
         const modal = document.getElementById('modal');

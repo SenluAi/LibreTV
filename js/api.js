@@ -558,18 +558,10 @@ async function handleMultipleCustomSearch(searchQuery, customApiUrls) {
 
 async function testSiteAvailability(apiUrl) {
     try {
-        // 使用更简单的测试查询
-        const response = await fetch('/api/search?wd=test&customApi=' + encodeURIComponent(apiUrl), {
-            // 添加超时
-            signal: AbortSignal.timeout(5000)
-        });
-        
-        // 检查响应状态
-        if (!response.ok) {
-            return false;
-        }
-        
-        const data = await response.json();
+        // 使用更简单的测试查询，直接调用前端处理函数（不依赖后端）
+        const mockUrl = new URL('/api/search?wd=test&customApi=' + encodeURIComponent(apiUrl), window.location.origin);
+        const responseText = await handleApiRequest(mockUrl);
+        const data = JSON.parse(responseText);
         
         // 检查API响应的有效性
         return data && data.code !== 400 && Array.isArray(data.list);
