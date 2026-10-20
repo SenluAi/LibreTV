@@ -583,6 +583,10 @@ async function search() {
         
         // 从所有选中的API源搜索
         let allResults = [];
+        // 统计成功和失败的源数量
+        let successCount = 0;
+        let failCount = 0;
+        
         const searchPromises = selectedAPIs.map(async (apiId) => {
             try {
                 let apiUrl, apiName;
@@ -607,10 +611,12 @@ async function search() {
                 });
                 
                 if (!response.ok) {
+                    failCount++;
                     return [];
                 }
                 
                 const data = await response.json();
+                successCount++;
                 
                 if (!data || !data.list || !Array.isArray(data.list) || data.list.length === 0) {
                     return [];
@@ -627,6 +633,7 @@ async function search() {
                 return results;
             } catch (error) {
                 console.warn(`API ${apiId} 搜索失败:`, error);
+                failCount++;
                 return [];
             }
         });
@@ -650,14 +657,28 @@ async function search() {
         
         // 如果没有结果
         if (!allResults || allResults.length === 0) {
+            let emptyMessage;
+            if (successCount === 0) {
+                // 所有源都失败了，显示网络/代理问题
+                emptyMessage = `
+                    <h3 class="mt-2 text-lg font-medium text-red-400">网络连接失败</h3>
+                    <p class="mt-1 text-sm text-gray-500">所有 ${failCount} 个数据源都无法连接<br>可能是代理服务器不稳定，请稍后再试</p>
+                `;
+            } else {
+                // 部分源成功但没有结果
+                emptyMessage = `
+                    <h3 class="mt-2 text-lg font-medium text-gray-400">没有找到匹配的结果</h3>
+                    <p class="mt-1 text-sm text-gray-500">成功连接 ${successCount} 个源，失败 ${failCount} 个<br>请尝试其他关键词或更换数据源</p>
+                `;
+            }
+            
             resultsDiv.innerHTML = `
                 <div class="col-span-full text-center py-16">
                     <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                               d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <h3 class="mt-2 text-lg font-medium text-gray-400">没有找到匹配的结果</h3>
-                    <p class="mt-1 text-sm text-gray-500">请尝试其他关键词或更换数据源</p>
+                    ${emptyMessage}
                 </div>
             `;
             hideLoading();

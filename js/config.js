@@ -6,6 +6,10 @@ const PROXY_URLS = [
     'https://api.allorigins.win/raw?url=',
     'https://api.codetabs.com/v1/proxy?quest=',
     'https://corsproxy.io/?url=',
+    'https://proxy.cors.dev/',
+    'https://bypass.cors.rest/',
+    'https://thingproxy.freeboard.io/fetch/',
+    'https://cors-anywhere.herokuapp.com/',
 ];
 const PROXY_URL = PROXY_URLS[0]; // 兼容旧代码，默认用第一个
 const HOPLAYER_URL = 'https://hoplayer.com/index.html';
@@ -278,16 +282,18 @@ const CUSTOM_API_CONFIG = {
 // 多代理自动切换请求函数
 // 依次尝试多个代理，第一个成功就返回，失败了换下一个
 async function fetchWithProxy(targetUrl, options = {}, timeoutMs = 10000) {
-    let lastError = null;
+    let errors = [];
     
     for (const proxy of PROXY_URLS) {
         try {
-            // 根据不同代理格式拼接 URL
             let proxyUrl;
+            // 参数式代理：目标URL需要编码后放在参数里
             if (proxy.includes('?url=') || proxy.includes('?quest=')) {
                 proxyUrl = proxy + encodeURIComponent(targetUrl);
-            } else {
-                proxyUrl = proxy + encodeURIComponent(targetUrl);
+            } 
+            // 前缀式代理：目标URL直接拼接，不编码
+            else {
+                proxyUrl = proxy + targetUrl;
             }
             
             const controller = new AbortController();
@@ -301,14 +307,15 @@ async function fetchWithProxy(targetUrl, options = {}, timeoutMs = 10000) {
             clearTimeout(timeoutId);
             
             if (response.ok) {
+                console.log(`代理成功: ${proxy}`);
                 return response;
             }
-            lastError = new Error(`HTTP ${response.status}`);
+            errors.push(`${proxy}: HTTP ${response.status}`);
         } catch (e) {
-            lastError = e;
-            // 继续尝试下一个代理
+            errors.push(`${proxy}: ${e.message}`);
         }
     }
     
-    throw lastError || new Error('所有代理均请求失败');
+    console.error('所有代理均失败:', errors);
+    throw new Error(`所有代理均请求失败 (${errors.length}个代理): ${errors.join('; ')}`);
 }
