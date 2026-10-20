@@ -23,17 +23,10 @@ async function handleApiRequest(url) {
                 ? `${customApi}${API_CONFIG.search.path}${encodeURIComponent(searchQuery)}`
                 : `${API_SITES[source].api}${API_CONFIG.search.path}${encodeURIComponent(searchQuery)}`;
             
-            // 添加超时处理
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-            
             try {
-                const response = await fetch(PROXY_URL + encodeURIComponent(apiUrl), {
-                    headers: API_CONFIG.search.headers,
-                    signal: controller.signal
+                const response = await fetchWithProxy(apiUrl, {
+                    headers: API_CONFIG.search.headers
                 });
-                
-                clearTimeout(timeoutId);
                 
                 if (!response.ok) {
                     throw new Error(`API请求失败: ${response.status}`);
@@ -103,17 +96,10 @@ async function handleApiRequest(url) {
                 ? `${customApi}${API_CONFIG.detail.path}${id}`
                 : `${API_SITES[sourceCode].api}${API_CONFIG.detail.path}${id}`;
             
-            // 添加超时处理
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-            
             try {
-                const response = await fetch(PROXY_URL + encodeURIComponent(detailUrl), {
-                    headers: API_CONFIG.detail.headers,
-                    signal: controller.signal
+                const response = await fetchWithProxy(detailUrl, {
+                    headers: API_CONFIG.detail.headers
                 });
-                
-                clearTimeout(timeoutId);
                 
                 if (!response.ok) {
                     throw new Error(`详情请求失败: ${response.status}`);
@@ -201,18 +187,12 @@ async function handleCustomApiSpecialDetail(id, customApi) {
         const detailUrl = `${customApi}/index.php/vod/detail/id/${id}.html`;
         
         // 添加超时处理
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
         // 获取详情页HTML
-        const response = await fetch(PROXY_URL + encodeURIComponent(detailUrl), {
+        const response = await fetchWithProxy(detailUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            },
-            signal: controller.signal
+            }
         });
-        
-        clearTimeout(timeoutId);
         
         if (!response.ok) {
             throw new Error(`自定义API详情页请求失败: ${response.status}`);
@@ -274,19 +254,12 @@ async function handleSpecialSourceDetail(id, sourceCode) {
         // 构建详情页URL（使用配置中的detail URL而不是api URL）
         const detailUrl = `${API_SITES[sourceCode].detail}/index.php/vod/detail/id/${id}.html`;
         
-        // 添加超时处理
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
         // 获取详情页HTML
-        const response = await fetch(PROXY_URL + encodeURIComponent(detailUrl), {
+        const response = await fetchWithProxy(detailUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            },
-            signal: controller.signal
+            }
         });
-        
-        clearTimeout(timeoutId);
         
         if (!response.ok) {
             throw new Error(`详情页请求失败: ${response.status}`);
@@ -362,7 +335,7 @@ async function handleAggregatedSearch(searchQuery) {
                 setTimeout(() => reject(new Error(`${source}源搜索超时`)), 8000)
             );
             
-            const fetchPromise = fetch(PROXY_URL + encodeURIComponent(apiUrl), {
+            const fetchPromise = fetchWithProxy(apiUrl, {
                 headers: API_CONFIG.search.headers
             });
             
@@ -471,7 +444,7 @@ async function handleMultipleCustomSearch(searchQuery, customApiUrls) {
                 setTimeout(() => reject(new Error(`自定义API ${index+1} 搜索超时`)), 8000)
             );
             
-            const fetchPromise = fetch(PROXY_URL + encodeURIComponent(fullUrl), {
+            const fetchPromise = fetchWithProxy(fullUrl, {
                 headers: API_CONFIG.search.headers
             });
             

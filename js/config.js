@@ -1,6 +1,13 @@
 // 全局常量配置
 
-const PROXY_URL = 'https://cors.zme.ink/';
+// 多代理自动切换：依次尝试，第一个失败就用下一个
+const PROXY_URLS = [
+    'https://cors.zme.ink/',
+    'https://api.allorigins.win/raw?url=',
+    'https://api.codetabs.com/v1/proxy?quest=',
+    'https://corsproxy.io/?url=',
+];
+const PROXY_URL = PROXY_URLS[0]; // 兼容旧代码，默认用第一个
 const HOPLAYER_URL = 'https://hoplayer.com/index.html';
 const SEARCH_HISTORY_KEY = 'videoSearchHistory';
 const MAX_HISTORY_ITEMS = 5;
@@ -267,3 +274,41 @@ const CUSTOM_API_CONFIG = {
     cacheExpiry: 5184000000,  // 缓存过期时间(2个月)
     adultPropName: 'isAdult'  // 用于标记成人内容的属性名
 };
+
+// 多代理自动切换请求函数
+// 依次尝试多个代理，第一个成功就返回，失败了换下一个
+async function fetchWithProxy(targetUrl, options = {}, timeoutMs = 10000) {
+    let lastError = null;
+    
+    for (const proxy of PROXY_URLS) {
+        try {
+            // 根据不同代理格式拼接 URL
+            let proxyUrl;
+            if (proxy.includes('?url=') || proxy.includes('?quest=')) {
+                proxyUrl = proxy + encodeURIComponent(targetUrl);
+            } else {
+                proxyUrl = proxy + encodeURIComponent(targetUrl);
+            }
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            
+            const response = await fetch(proxyUrl, {
+                ...options,
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (response.ok) {
+                return response;
+            }
+            lastError = new Error(`HTTP ${response.status}`);
+        } catch (e) {
+            lastError = e;
+            // 继续尝试下一个代理
+        }
+    }
+    
+    throw lastError || new Error('所有代理均请求失败');
+}

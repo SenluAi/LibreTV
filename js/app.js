@@ -1,5 +1,5 @@
 // 全局变量
-let selectedAPIs = JSON.parse(localStorage.getItem('selectedAPIs') || '["heimuer"]'); // 默认选中黑木耳
+let selectedAPIs = JSON.parse(localStorage.getItem('selectedAPIs') || '["ffzy","jisu","mdzy","heimuer"]'); // 默认选中多个稳定源
 let customAPIs = JSON.parse(localStorage.getItem('customAPIs') || '[]'); // 存储自定义API列表
 
 // 添加当前播放的集数索引
@@ -27,8 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 设置默认API选择（如果是第一次加载）
     if (!localStorage.getItem('hasInitializedDefaults')) {
-        // 仅选择黑木耳源
-        selectedAPIs = ["heimuer"];
+        // 默认选中多个稳定源，提高搜索成功率
+        selectedAPIs = ["ffzy", "jisu", "mdzy", "heimuer"];
         localStorage.setItem('selectedAPIs', JSON.stringify(selectedAPIs));
         
         // 默认选中过滤开关
@@ -602,16 +602,9 @@ async function search() {
                     apiName = API_SITES[apiId].name;
                 }
                 
-                // 添加超时处理
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
-                
-                const response = await fetch(PROXY_URL + encodeURIComponent(apiUrl), {
-                    headers: API_CONFIG.search.headers,
-                    signal: controller.signal
+                const response = await fetchWithProxy(apiUrl, {
+                    headers: API_CONFIG.search.headers
                 });
-                
-                clearTimeout(timeoutId);
                 
                 if (!response.ok) {
                     return [];
